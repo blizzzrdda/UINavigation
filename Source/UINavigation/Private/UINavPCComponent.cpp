@@ -740,7 +740,7 @@ void UUINavPCComponent::NotifyNavigatedTo(UUINavWidget* NavigatedWidget)
 		return;
 	}
 
-	if (NavigatedWidget == ActiveWidget && !IsValid(ActiveSubWidget) && IsValid(ActiveWidget->GetCurrentComponent()))
+	if (NavigatedWidget == ActiveWidget && (!IsValid(ActiveWidget->GetFirstComponent()) || IsValid(ActiveWidget->GetCurrentComponent())))
 	{
 		return;
 	}
@@ -1393,6 +1393,11 @@ bool UUINavPCComponent::IsWidgetChild(const UUINavWidget* const ParentWidget, co
 
 FKey UUINavPCComponent::GetEnhancedInputKey(const UInputAction* Action, const EInputAxis Axis, const EAxisType Scale, const EInputRestriction InputRestriction) const
 {
+	if (!IsValid(PC))
+	{
+		return FKey();
+	}
+
 	if (UUINavBlueprintFunctionLibrary::IsUINavInputAction(Action))
 	{
 		const UInputMappingContext* const UINavInputContext = GetDefault<UUINavSettings>()->EnhancedInputContext.LoadSynchronous();
@@ -1422,7 +1427,7 @@ FKey UUINavPCComponent::GetEnhancedInputKey(const UInputAction* Action, const EI
 				{
 					return Key;
 				}
-				else
+				else if (IsAxis(Key))
 				{
 					return GetKeyFromAxis(Key, Scale == EAxisType::Positive, Axis);
 				}
@@ -1588,7 +1593,7 @@ const FKey UUINavPCComponent::GetKeyFromAxis(const FKey& Key, const bool bPositi
 	const FKey CheckedKey = Axis2DKeys == nullptr ? Key : (Axis == EInputAxis::X ? Axis2DKeys->PositiveKey : Axis2DKeys->NegativeKey);
 
 	const FAxis2D_Keys* AxisKeys = AxisToKeyMap.Find(CheckedKey);
-	if (AxisKeys == nullptr) return FKey();
+	if (AxisKeys == nullptr) return Key;
 
 	return bPositive ? AxisKeys->PositiveKey : AxisKeys->NegativeKey;
 }
